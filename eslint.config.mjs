@@ -2,16 +2,14 @@ import coreWebVitals from "eslint-config-next/core-web-vitals";
 import typescript from "eslint-config-next/typescript";
 
 const eslintConfig = [
-  // Reference trees and packaged/generated output are not source to lint.
+  // 参考树、打包产物与生成目录不参与 lint
   {
     ignores: [
       "ref-repos/**",
       "release/**",
+      "dist/**",
       ".next/**",
       "bundled-skills/**",
-      // Tracked one-off diagnostics are not production or test sources.
-      "scripts/electron-diag.js",
-      "scripts/pill-test-main.js",
       "scripts/tmp-md-test.mjs",
     ],
   },
@@ -24,10 +22,8 @@ const eslintConfig = [
       "react-hooks/set-state-in-effect": "off",
     },
   },
-  // Electron's main/preload processes intentionally use CommonJS so they can
-  // run directly under Electron without a transpilation step.
   {
-    files: ["electron/**/*.js"],
+    files: ["lib/bundled-skills.js", "bin/**/*.js"],
     rules: {
       "@typescript-eslint/no-require-imports": "off",
     },

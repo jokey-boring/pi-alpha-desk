@@ -6,14 +6,10 @@ import {
   Copy,
   Gear,
   List,
-  Minus,
   Moon,
   SidebarSimple,
-  Square,
   Sun,
-  X,
 } from "@phosphor-icons/react";
-import { useElectronWindow } from "@/hooks/useElectronWindow";
 import { useI18n } from "@/hooks/useI18n";
 import type { SessionStatsInfo } from "@/lib/pi-types";
 
@@ -112,12 +108,11 @@ export function AppTitleBar({
   sessionTitle,
   onWorkspaceControlsHostChange,
 }: AppTitleBarProps) {
-  const { isElectron, isMac, isMaximized, minimize, toggleMaximize, close } = useElectronWindow();
   const { t: translate } = useI18n();
 
   return (
     <>
-      {/* Full-width app title bar — drag region for frameless Electron */}
+      {/* 顶部工具栏：侧栏、工作区控件、主题与设置 */}
       <div
         ref={topBarRef}
         className="app-title-bar"
@@ -131,18 +126,7 @@ export function AppTitleBar({
           position: "relative",
           zIndex: 600,
         }}
-        onDoubleClick={(e) => {
-          // Double-click title bar to toggle maximize (only in Electron)
-          if (!isElectron) return;
-          const target = e.target as HTMLElement;
-          if (target.closest("button, a, input, select, textarea")) return;
-          toggleMaximize();
-        }}
       >
-        {/* macOS traffic-light buttons live in the native title bar area; reserve
-            space on the left so they don't overlap the sidebar toggle. */}
-        {isMac && <div aria-hidden="true" style={{ width: 72, flexShrink: 0 }} />}
-
         {/* Sidebar toggle */}
         <button
           className="app-no-drag"
@@ -180,7 +164,7 @@ export function AppTitleBar({
           <div style={{ display: "flex", alignItems: "stretch", height: "100%" }} />
         )}
 
-        {/* Flexible title spacer; in Electron this is the primary drag area. */}
+        {/* 标题居中占位 */}
         <div
           className="app-title-drag"
           style={{
@@ -253,63 +237,6 @@ export function AppTitleBar({
         >
           <Gear size={16} aria-hidden="true" />
         </button>
-
-        {/* Window controls (Electron only; macOS uses native traffic lights) */}
-        {isElectron && !isMac && (
-          <div style={{ display: "flex", alignItems: "stretch", height: "100%", flexShrink: 0 }}>
-            <button
-              className="app-no-drag"
-              onClick={minimize}
-              title={translate("desktop.minimize")}
-              aria-label={translate("desktop.minimize")}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 44, height: "100%", padding: 0,
-                background: "none", border: "none",
-                color: "var(--text-muted)", cursor: "pointer",
-                transition: "color 0.12s, background 0.12s",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; e.currentTarget.style.background = "var(--bg-hover)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "none"; }}
-            >
-              <Minus size={16} aria-hidden="true" />
-            </button>
-            <button
-              className="app-no-drag"
-              onClick={toggleMaximize}
-              title={isMaximized ? translate("desktop.restore") : translate("desktop.maximize")}
-              aria-label={isMaximized ? translate("desktop.restore") : translate("desktop.maximize")}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 44, height: "100%", padding: 0,
-                background: "none", border: "none",
-                color: "var(--text-muted)", cursor: "pointer",
-                transition: "color 0.12s, background 0.12s",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text)"; e.currentTarget.style.background = "var(--bg-hover)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "none"; }}
-            >
-              {isMaximized ? <Copy size={16} aria-hidden="true" /> : <Square size={16} aria-hidden="true" />}
-            </button>
-            <button
-              className="app-no-drag"
-              onClick={close}
-              title={translate("desktop.close")}
-              aria-label={translate("desktop.close")}
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                width: 44, height: "100%", padding: 0,
-                background: "none", border: "none",
-                color: "var(--text-muted)", cursor: "pointer",
-                transition: "color 0.12s, background 0.12s",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.background = "#e81123"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "none"; }}
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Dropdown panel — fixed position, full width below title bar */}

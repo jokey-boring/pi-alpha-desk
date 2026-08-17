@@ -11,39 +11,10 @@ const fs = require("fs");
 const { parseLaunchOptions } = require("./pi-web-options");
 
 const pkgDir = path.join(__dirname, "..");
+const distServer = path.join(pkgDir, "dist", "server.js");
 const nextDir = path.join(pkgDir, ".next");
 
-// Resolve next's CLI entry directly to avoid relying on .bin symlinks (which
-// may not exist when installed via npx).
-let nextBin;
-try {
-  nextBin = require.resolve("next/dist/bin/next", { paths: [pkgDir] });
-} catch {
-  // Fallback: locate next package root and derive the bin path manually.
-  try {
-    const nextPkg = require.resolve("next/package.json", { paths: [pkgDir] });
-    nextBin = path.join(path.dirname(nextPkg), "dist", "bin", "next");
-  } catch {
-    nextBin = path.join(pkgDir, "node_modules", "next", "dist", "bin", "next");
-  }
-}
-
 const { port, hostname, openBrowser } = parseLaunchOptions();
-
-if (!fs.existsSync(nextDir)) {
-  console.error("Build artifacts not found. Please report this issue.");
-  process.exit(1);
-}
-
-const nextArgs = ["start", "-p", port, "-H", hostname];
-
-// Always run next's JS entry with node directly — avoids .bin symlink issues
-// and path-with-spaces problems on Windows when shell: true is used.
-const child = spawn(process.execPath, [nextBin, ...nextArgs], {
-  cwd: pkgDir,
-  stdio: ["inherit", "pipe", "inherit"],
-  env: { ...process.env, PI_WEB_HOSTNAME: hostname },
-});
 
 if (hostname !== "127.0.0.1" && hostname !== "localhost" && hostname !== "::1") {
   if (process.env.PI_WEB_PASSWORD) {
@@ -56,26 +27,67 @@ if (hostname !== "127.0.0.1" && hostname !== "localhost" && hostname !== "::1") 
 let browserOpened = false;
 const url = `http://${hostname}:${port}`;
 
-child.stdout.on("data", (chunk) => {
-  const text = chunk.toString();
-  process.stdout.write(text);
-  if (openBrowser && !browserOpened && text.includes("Ready")) {
-    browserOpened = true;
-    const isWindows = process.platform === "win32";
-    const isMac = process.platform === "darwin";
-    const openCmd = isWindows ? "start" : isMac ? "open" : "xdg-open";
-    const opener = spawn(openCmd, [url], {
-      shell: isWindows,
-      stdio: "ignore",
-      detached: true,
-    });
+function attachBrowserOpener(child) {
+  if (!child.stdout) return;
+  child.stdout.on("data", (chunk) => {
+    const text = chunk.toString();
+    process.stdout.write(text);
+    if (openBrowser && !browserOpened && /Ready|started server/i.test(text)) {
+      browserOpened = true;
+      const isWindows = process.platform === "win32";
+      const isMac = process.platform === "darwin";
+      const openCmd = isWindows ? "start" : isMac ? "open" : "xdg-open";
+      const opener = spawn(openCmd, [url], {
+        shell: isWindows,
+        stdio: "ignore",
+        detached: true,
+      });
+      opener.on("error", (error) => {
+        console.warn(`Could not open browser automatically: ${error.message}`);
+      });
+      opener.unref();
+    }
+  });
+}
 
-    opener.on("error", (error) => {
-      console.warn(`Could not open browser automatically: ${error.message}`);
-    });
-
-    opener.unref();
+// 优先使用独立 dist 包（npm run build 产物）
+if (fs.existsSync(distServer)) {
+  const child = spawn(process.execPath, [distServer], {
+    cwd: path.join(pkgDir, "dist"),
+    stdio: ["inherit", "pipe", "inherit"],
+    env: {
+      ...process.env,
+      PORT: port,
+      HOSTNAME: hostname,
+      PI_WEB_HOSTNAME: hostname,
+    },
+  });
+  attachBrowserOpener(child);
+  child.on("exit", (code) => process.exit(code ?? 0));
+} else {
+  // 回退：直接 next start（需本地已有 .next 与 node_modules）
+  if (!fs.existsSync(nextDir)) {
+    console.error("Build artifacts not found. Run npm run build first.");
+    process.exit(1);
   }
-});
 
-child.on("exit", (code) => process.exit(code ?? 0));
+  let nextBin;
+  try {
+    nextBin = require.resolve("next/dist/bin/next", { paths: [pkgDir] });
+  } catch {
+    try {
+      const nextPkg = require.resolve("next/package.json", { paths: [pkgDir] });
+      nextBin = path.join(path.dirname(nextPkg), "dist", "bin", "next");
+    } catch {
+      nextBin = path.join(pkgDir, "node_modules", "next", "dist", "bin", "next");
+    }
+  }
+
+  const child = spawn(process.execPath, [nextBin, "start", "-p", port, "-H", hostname], {
+    cwd: pkgDir,
+    stdio: ["inherit", "pipe", "inherit"],
+    env: { ...process.env, PI_WEB_HOSTNAME: hostname },
+  });
+  attachBrowserOpener(child);
+  child.on("exit", (code) => process.exit(code ?? 0));
+}

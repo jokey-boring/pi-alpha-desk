@@ -29,9 +29,7 @@ nul
 !/build/
 !/build/installer.nsh
 /release
-
-# electron
-electron/node_modules/
+/dist
 
 # tauri (remnants from previous Tauri migration, kept to prevent re-inclusion)
 src-tauri/

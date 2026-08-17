@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  面向 <a href="https://github.com/badlogic/pi-mono">pi 编程智能体</a> 的 Electron-first 桌面客户端。
+  面向 <a href="https://github.com/badlogic/pi-mono">pi 编程智能体</a> 的 Web 客户端（Next.js + React）。
 </p>
 
 <p align="center">
@@ -18,9 +18,9 @@
 
 ## 项目概览
 
-数字化AI助手（`@happyzengfen/pi-alpha-desk`）从上游 [pi-web](https://github.com/agegr/pi-web) `v0.7.16` 起步，目前已发展为独立的 Electron-first 桌面产品。它为本地 pi 会话提供可视化工作区，同时保持与 pi 的会话存储、模型、认证、Skills、插件和主题格式兼容。
+数字化AI助手（`@happyzengfen/pi-alpha-desk`）从上游 [pi-web](https://github.com/agegr/pi-web) `v0.7.16` 起步，目前是独立的 Next.js + React Web 产品。它为本地 pi 会话提供可视化工作区，同时保持与 pi 的会话存储、模型、认证、Skills、插件和主题格式兼容。
 
-本仓库不是上游镜像。产品优先保护桌面窗口、标题栏、侧栏、流程时间线、主题、字体和文件工作区体验；上游的 SDK 兼容、安全、数据完整性、认证、SSE 与可靠性修复会经过适配后选择性引入。
+本仓库不是上游镜像。产品优先保护侧栏、流程时间线、主题、字体和文件工作区体验；上游的 SDK 兼容、安全、数据完整性、认证、SSE 与可靠性修复会经过适配后选择性引入。
 
 ### 当前开发基线
 
@@ -30,7 +30,6 @@
 | Node.js | `>=22.19.0` |
 | Next.js | `16.3.0` |
 | React | `19.2.x` |
-| Electron | `43.x` |
 | Pi SDK registry fallback | `0.84.0` |
 
 ## 2026-08-09 更新重点
@@ -81,36 +80,20 @@
 
 ## 安装与运行
 
-### Windows x64 桌面版
-
-从 [GitHub Releases](https://github.com/happyzengfen/pi-alpha-desk/releases) 下载：
-
-- `数字化AI助手 Setup <版本>.exe`：NSIS 安装版
-- `数字化AI助手-<版本>-portable.exe`：免安装便携版
-
-未签名开发包可能触发 Windows SmartScreen。请先核对下载来源，再选择“更多信息 → 仍要运行”；对外发行应配置正式代码签名证书。
-
-### macOS arm64 桌面版
-
-仓库已提供 macOS arm64 构建、包结构校验和实际启动 smoke。当前本地构建为 ad-hoc 签名，未配置 Developer ID 和 Apple notarization；首次打开可能需要在 Finder 中右键应用并选择“打开”。
-
-Apple Silicon 本机构建：
+### 生产构建（独立 dist）
 
 ```bash
-npm ci
-npm run electron:build
+npm install
+npm run build
+cd dist
+node server.js
 ```
 
-默认生成：
+`npm run build` 会生成可独立运行的 `dist/`：内含 `server.js`、`.next`、`public`、`bundled-*` 以及运行所需的 `node_modules`。即使删除仓库根目录的 `node_modules`，只要进入 `dist` 执行 `node server.js` 仍可启动（需本机已安装 Node.js `>=22.19.0`）。
 
-```text
-release/数字化AI助手-<版本>-arm64.dmg
-release/mac-arm64/数字化AI助手.app
-```
+默认地址：[http://127.0.0.1:30141](http://127.0.0.1:30141)。也可用仓库根目录的 `npm start`。
 
-对外分发前应补齐 Developer ID 签名、notarization 和真实安装验证。
-
-### 从源码运行
+### 从源码开发
 
 要求：
 
@@ -125,22 +108,11 @@ npm run dev
 
 浏览器打开 [http://localhost:30141](http://localhost:30141)。默认开发命令使用 Webpack；Turbopack 可通过 `npm run dev:turbo` 启动。
 
-运行 Electron 开发外壳：
+## 运行行为
 
-```bash
-npm run electron:dev
-```
-
-## 桌面行为
-
-- Electron 桌面服务默认只监听 `127.0.0.1`。
-- 默认端口 `30141` 被占用时，打包应用会自动选择其他本地端口。
-- 关闭窗口会隐藏到托盘；通过托盘菜单的 **Quit** 完整退出。
-- 启动诊断写入 Electron 应用数据目录中的 `pi-web-server.log`。
-- 自有 Next.js 服务异常退出时会显示日志路径、末尾输出、code/signal，然后完整退出。
+- 服务默认只监听 `127.0.0.1`，端口 `30141`。
 - 五个通用 Pi 插件作为精确版本应用依赖随包交付：子代理、MCP、Web 访问、结构化提问和目标执行。版本及 npm integrity 记录在 `bundled-plugins/manifest.json`。
-- 缺失的内置 starter skills 会复制到当前 pi agent 目录；已有用户版本不会被覆盖。`0.8.7` 内置 `guizang-ppt-skill`、`office-viewer`、`pdf` 和 `windows-word-docx`，来源、许可证、平台与内容哈希记录在 `bundled-skills/manifest.json`。
-- macOS 使用原生编辑菜单与 Renderer fallback，支持常用 Command 编辑快捷键。
+- 启动时会把缺失的内置 starter skills 复制到当前 pi agent 目录；已有用户版本不会被覆盖。`0.8.7` 内置 skills 清单见 `bundled-skills/manifest.json`。
 
 ## 数据、会话与项目访问
 
@@ -209,13 +181,12 @@ npm CLI 还支持 `--port` / `-p`、`--hostname` / `-H` 和 `--no-open`。
 | --- | --- |
 | `npm run dev` | 在 `127.0.0.1:30141` 启动 Webpack 开发服务 |
 | `npm run dev:turbo` | 使用 Turbopack 启动开发服务 |
-| `npm run electron:dev` | Electron 开发模式 |
 | `npm test` | 运行明确选择的跨平台源码 `*.test.mjs` 测试 |
 | `node_modules/.bin/tsc --noEmit` | TypeScript 类型检查 |
 | `npm run lint` | ESLint 检查 |
-| `npm run benchmark:desktop` | 固定桌面性能夹具与隔离 Electron 启动基准 |
-| `npm run build` | Next.js Webpack 生产构建 |
-| `npm run electron:build` | 为当前平台构建 Electron 包 |
+| `npm run build` | 生产构建并组装独立 `dist/`（含 `server.js` 与依赖） |
+| `npm start` | 启动 `dist/server.js` |
+| `cd dist && node server.js` | 在独立目录中直接启动（可不依赖仓库根 `node_modules`） |
 
 开发服务器运行期间不要执行 `next build` / `npm run build`，因为它会写入 `.next/` 并干扰正在运行的 dev server；只在发布或独立验证阶段构建。
 

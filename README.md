@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  An Electron-first desktop client for the <a href="https://github.com/badlogic/pi-mono">pi coding agent</a>.
+  An Electron-free web client (Next.js + React) for the <a href="https://github.com/badlogic/pi-mono">pi coding agent</a>.
 </p>
 
 <p align="center">
@@ -18,9 +18,9 @@
 
 ## Overview
 
-数字化AI助手 (`@happyzengfen/pi-alpha-desk`) is a desktop-focused derivative of upstream [pi-web](https://github.com/agegr/pi-web) `v0.7.16`. It provides a visual workspace for local pi sessions while preserving compatibility with pi's session storage, models, authentication, skills, plugins, and theme formats.
+数字化AI助手 (`@happyzengfen/pi-alpha-desk`) is a Next.js + React web UI derived from upstream [pi-web](https://github.com/agegr/pi-web) `v0.7.16`. It provides a visual workspace for local pi sessions while preserving compatibility with pi's session storage, models, authentication, skills, plugins, and theme formats.
 
-This repository is not an upstream mirror. It prioritizes its own desktop experience and selectively adopts upstream SDK compatibility, security, correctness, and reliability improvements.
+This repository is not an upstream mirror. It prioritizes its own product experience and selectively adopts upstream SDK compatibility, security, correctness, and reliability improvements.
 
 ### Current baseline
 
@@ -30,14 +30,13 @@ This repository is not an upstream mirror. It prioritizes its own desktop experi
 | Node.js | `>=22.19.0` |
 | Next.js | `16.3.0` |
 | React | `19.2.x` |
-| Electron | `43.x` |
 | pi SDK registry fallback | `0.84.0` |
 
 ## Highlights
 
 - **Local session workspace** — browse, rename, delete, fork, branch, export, and resume pi JSONL sessions.
 - **Real-time conversations** — per-session SSE streaming, reconnect and running-state recovery, compaction support, tool output, thinking display, and process timelines.
-- **Desktop-first shell** — frameless window, custom title bar, native folder picker, system tray, single-instance behavior, and automatic local-port fallback.
+- **Standalone dist build** — `npm run build` produces a self-contained `dist/` with `server.js` and runtime dependencies.
 - **Project and Git tools** — file explorer, fuzzy file search, Git status and diff views, quick changes, and Git worktree management.
 - **Rich file preview** — source code, diffs, images, audio, PDF, and DOCX files.
 - **Model and authentication management** — configure models, test providers, manage API keys, and complete supported OAuth or device-code login flows.
@@ -65,16 +64,18 @@ File diff preview:
 
 ## Install and run
 
-### Windows x64 desktop app
+### Production dist (standalone)
 
-Download the NSIS installer or portable executable from [GitHub Releases](https://github.com/happyzengfen/pi-alpha-desk/releases):
+```bash
+npm install
+npm run build
+cd dist
+node server.js
+```
 
-- `数字化AI助手 Setup <version>.exe` — standard installer
-- `数字化AI助手-<version>-portable.exe` — portable executable
+`npm run build` produces a self-contained `dist/` with `server.js`, `.next`, `public`, `bundled-*`, and runtime `node_modules`. You can delete the repo-root `node_modules` and still run `node server.js` from `dist/` (requires Node.js `>=22.19.0` on the host).
 
-The current automated release workflow targets Windows x64. Other platforms can run the project from source or use the Electron build configuration as a starting point for local packaging.
-
-Unsigned development builds may trigger Windows SmartScreen. Verify the download source before choosing **More info → Run anyway**.
+Default URL: [http://127.0.0.1:30141](http://127.0.0.1:30141). From the repo root you can also use `npm start`.
 
 ### Run from source
 
@@ -91,20 +92,11 @@ npm run dev
 
 Open [http://localhost:30141](http://localhost:30141). The default development command uses Webpack; Turbopack is available with `npm run dev:turbo`.
 
-To run the Electron shell in development:
+## Runtime behavior
 
-```bash
-npm run electron:dev
-```
-
-## Desktop behavior
-
-- The Electron app serves its UI only on `127.0.0.1`.
-- If the default port `30141` is already occupied, a packaged app automatically selects another available local port.
-- Closing the window hides it to the tray. Use the tray's **Quit** action to exit completely.
-- Startup diagnostics are written to `pi-web-server.log` in the Electron application-data directory.
+- The server listens on `127.0.0.1:30141` by default.
 - Five general-purpose Pi plugins are bundled as exact application dependencies: subagents, MCP, web access, structured questions, and goals. Their versions and npm integrity values are recorded in `bundled-plugins/manifest.json`.
-- Bundled starter skills are copied to `~/.pi/agent/skills/` when missing. Existing user copies are preserved. Version `0.8.7` bundles `guizang-ppt-skill`, `office-viewer`, `pdf`, and `windows-word-docx`; their source, license, platform, and content hashes are recorded in `bundled-skills/manifest.json`.
+- Bundled starter skills are copied into the active pi agent skills directory when missing. Existing user copies are preserved. See `bundled-skills/manifest.json`.
 
 ## Data, sessions, and project access
 
@@ -175,14 +167,14 @@ The npm CLI also accepts `--port` / `-p`, `--hostname` / `-H`, and `--no-open`.
 | --- | --- |
 | `npm run dev` | Next.js development server on `127.0.0.1:30141` using Webpack |
 | `npm run dev:turbo` | Next.js development server using Turbopack |
-| `npm run electron:dev` | Electron development mode |
 | `npm test` | Run the explicit cross-platform source `*.test.mjs` suite |
 | `./node_modules/.bin/tsc --noEmit` | Type-check the project |
 | `npm run lint` | Run ESLint |
-| `npm run build` | Create the Next.js production build |
-| `npm run electron:build` | Build and package Electron for the current platform |
+| `npm run build` | Production build and assemble standalone `dist/` |
+| `npm start` | Start `dist/server.js` |
+| `cd dist && node server.js` | Run the standalone package without repo-root `node_modules` |
 
-Avoid `next build` / `npm run build` while a development server is active. It writes to `.next/` and can interfere with the running dev server.
+Prefer `npm run dev` during active development. Use `npm run build` when you need to verify the standalone `dist/` package.
 
 ### Local pi snapshots
 

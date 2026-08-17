@@ -2,7 +2,7 @@
 
 ## 项目定位
 
-Pi Alpha Desk（npm 包名 `@happyzengfen/pi-alpha-desk`）是面向 pi coding agent 的 Electron-first 桌面客户端，基于上游 pi-web `v0.7.16` 分化开发。
+Pi Alpha Desk（npm 包名 `@happyzengfen/pi-alpha-desk`）是面向 pi coding agent 的 Web 客户端，基于上游 pi-web `v0.7.16` 分化开发，技术栈为 Next.js + React。
 
 核心能力包括：
 
@@ -11,10 +11,9 @@ Pi Alpha Desk（npm 包名 `@happyzengfen/pi-alpha-desk`）是面向 pi coding a
 - 项目文件浏览、搜索、预览、Git 状态与 diff
 - Git worktree 管理
 - pi / PI-TUI JSON 主题适配
-- Electron 无边框窗口、托盘与原生目录选择
 - 英文与简体中文界面
 
-本仓库不是上游镜像。优先保持本项目的桌面产品体验，同时选择性吸收上游的 SDK 兼容、安全、正确性和可靠性修复。
+本仓库不是上游镜像。优先保持本项目的产品体验，同时选择性吸收上游的 SDK 兼容、安全、正确性和可靠性修复。
 
 ## 技术栈
 
@@ -23,7 +22,6 @@ Pi Alpha Desk（npm 包名 `@happyzengfen/pi-alpha-desk`）是面向 pi coding a
 - React `19.2.x`
 - TypeScript 5，`strict: true`
 - Tailwind CSS 4
-- Electron 43 + electron-builder 26
 - 四个直接 pi SDK 依赖的 registry fallback 为 `0.84.0`；本地同步还会安装同 commit 的 `pi-client` 和 `pi-protocol` 内部包
 - npm（registry 依赖以 `package-lock.json` 为准；`.local-pi/` 快照不写入 lockfile）
 - Node 内置测试运行器，测试文件为共置的 `*.test.mjs`
@@ -40,11 +38,11 @@ components/             客户端 React UI
 hooks/                  会话、主题、i18n、音频、拖拽、快捷键和布局 hooks
 lib/                    SDK 封装、会话解析、文件安全、Git、Markdown、主题、i18n 等共享逻辑
 lib/i18n/               locale registry、格式化与 en / zh-CN 消息目录
-electron/               Electron main/preload、窗口、托盘、Next.js 服务生命周期
 bin/                    npm CLI 入口和启动参数解析
-scripts/                构建与发布脚本
+scripts/                构建与发布脚本（含 pack-dist）
 docs/                   worktree 文档、主题示例和截图
 public/                 图标、字体相关静态资源、Catppuccin 文件图标
+dist/                   npm run build 生成的独立可运行产物
 ```
 
 关键入口：
@@ -58,7 +56,7 @@ public/                 图标、字体相关静态资源、Catppuccin 文件图
 - `lib/session-reader.ts`：JSONL 会话读取、上下文构建和缓存
 - `lib/file-access.ts`：文件访问 allow-list
 - `lib/request-security.ts` / `proxy.ts`：Host、Origin 和 Basic Auth 边界
-- `electron/main.js`：桌面窗口、托盘和本地 Next.js 服务启动
+- `scripts/pack-dist.mjs`：将 Next standalone 组装为独立 `dist/`
 
 ## 开发命令
 
@@ -73,7 +71,9 @@ npm install
 ```bash
 npm run dev                 # Web 开发服务，127.0.0.1:30141，Webpack
 npm run dev:turbo           # Turbopack 开发服务
-npm run electron:dev        # Electron 开发模式
+npm run build               # next build + 组装独立 dist/
+npm start                   # 启动 dist/server.js
+cd dist && node server.js   # 不依赖仓库根 node_modules
 npm run pi:sync-local       # 从默认兄弟目录 ../pi 构建并安装本地 pi 快照
 npm run pi:sync-local -- --source /absolute/path/to/pi
 node --test                 # 全部 *.test.mjs 测试
@@ -85,15 +85,12 @@ npm run lint
 发布相关：
 
 ```bash
-npm run build
-npm run electron:build
-npm run release:green
 npm run release
 ```
 
-除非用户明确要求构建或发布，开发过程中不要运行 `npm run build` / `next build`。它会写入 `.next/`，可能干扰正在运行的 dev server。`release:green` 还会执行 dedupe、prune、Electron 打包并重装依赖，属于高影响发布流程。
+开发联调优先使用 `npm run dev`。需要验证独立产物时再执行 `npm run build`（会写入 `.next/` 与 `dist/`）。
 
-当前 `package.json` 没有 `test` script；测试命令是 `node --test`。README/AGENTS.md 中出现的 `npm test` 或 Turbopack 默认描述可能已经过时，应以 `package.json` 为准。
+当前测试命令是 `npm test`（内部为 `node --test`）。README/AGENTS.md 中若仍出现 Electron 打包命令，以 `package.json` 为准。
 
 ### 本地 pi 快照
 
@@ -104,7 +101,7 @@ npm run release
 - 本地安装先在临时隔离目录通过 `dependencies` + `overrides` 和 nested install strategy 解析六个 tarball，再原子替换项目中的实体包；不会修改 registry fallback 依赖、其他项目依赖或 `package-lock.json`。
 - 普通 `npm install` / `npm ci` / `npm dedupe` 会恢复 registry 版本；使用 `npm run pi:sync-local -- --restore` 恢复最近快照，`--verify` 只做身份和 checksum 检查。
 - dirty pi source 会被拒绝；快照保留 coding-agent shrinkwrap 的 transitive pins，并在外部 manifest 中记录每个 tarball 的 SHA-256。
-- 不要直接 symlink pi workspace 包；Next.js、npm 依赖去重和 Electron 打包更适合实体 tarball 快照。
+- 不要直接 symlink pi workspace 包；Next.js 与 npm 依赖去重更适合实体 tarball 快照。
 - 当前本地快照的来源、上游变更和验证记录见 `docs/local-pi-update-2026-08-03.md`。
 
 ## 代码约定
@@ -117,7 +114,7 @@ npm run release
 - 注释解释“为什么”，不要复述代码。
 - 匹配现有格式和实现方式；只修改与任务直接相关的代码。
 - pi SDK 的服务端包若不应被 Next.js 打包，需要同步维护 `next.config.ts` 的 `serverExternalPackages`。
-- Electron 主进程和 preload 直接运行 CommonJS；不要无故迁移为 ESM 或引入编译步骤。
+- `npm run build` 使用 `scripts/pack-dist.mjs` 组装独立 `dist/`（完整 `.next` + 生产 `node_modules` + `server.js`）；改打包逻辑时需保证 `cd dist && node server.js` 在无仓库根 `node_modules` 时仍可运行。
 
 ## 产品与合并约束
 
@@ -134,7 +131,7 @@ npm run release
 - `app/globals.css`
 - `hooks/useTheme.ts`
 
-同时保留：无边框窗口和标题栏、桌面侧栏交互、IA Writer Quattro/Lilex 字体、主题系统、过程时间线、Markdown 展示、Phosphor/provider 图标以及 Electron 原生集成。
+同时保留：顶栏与侧栏交互、IA Writer Quattro/Lilex 字体、主题系统、过程时间线、Markdown 展示、Phosphor/provider 图标。
 
 ### 上游同步原则
 
@@ -142,7 +139,7 @@ npm run release
 - 迁移“行为”，不要整块替换本地 UI 组件。
 - 跨层功能要完整迁移。例如模型 scope 涉及 SDK 解析、API/cache、AgentSession 构造和 UI 反馈时，不要只改 selector。
 - `ref-repos/` 只可作为本地只读比较材料：不提交、不整树复制、不作为替代源代码。
-- 不要覆盖 `package.json`；必须保留 Electron 打包、字体、图标、CLI 和发布配置。
+- 不要覆盖 `package.json` 中的 Next 构建/`dist` 打包、字体、图标、CLI 和发布配置。
 
 ## 关键不变量
 
@@ -172,21 +169,19 @@ npm run release
 
 - 默认监听 `127.0.0.1`。不要为了 LAN 使用通配 CORS 或放宽 Host/Origin 校验。
 - LAN 模式依赖显式 hostname/allowed hosts、`PI_WEB_PASSWORD`，并应配合 HTTPS 或可信 VPN。
-- 修改 `PI_WEB_HOSTNAME`、`PI_WEB_ALLOWED_HOSTS`、`PI_WEB_PASSWORD`、Host/Origin 校验或响应状态时，必须同时验证 Electron 的 `/api/home` readiness 流程和 BrowserWindow 启动。
-- Electron 本地子进程会剥离环境中的 `PI_WEB_PASSWORD`；不要把桌面本地密码暴露给 Chromium。
+- 修改 `PI_WEB_HOSTNAME`、`PI_WEB_ALLOWED_HOSTS`、`PI_WEB_PASSWORD`、Host/Origin 校验或响应状态时，必须验证 `/api/home` 与浏览器访问正常。
 - 认证状态接口不得返回原始 API key。
 
-### Electron
+### 独立 dist 产物
 
-- `asar: false` 时不能依赖 `app.isPackaged`；当前通过 `resources/app` / `resources/app.asar` 判断 dev/production。
-- 生产环境通过 `fork()` 启动 Next.js，因为 `process.execPath` 是打包后的应用程序而不是普通 Node 可执行文件。
-- 窗口是 frameless；布局改动必须保留拖拽区域、窗口按钮和 workspace controls。
-- 关闭窗口默认隐藏到托盘；真正退出由 tray Quit / app quitting 流程处理。
+- `scripts/pack-dist.mjs` 在 `next build` 后组装 `dist/`（完整 `.next`、生产依赖、`server.js`）。
+- `dist/server.js` 为唯一启动入口；默认 `127.0.0.1:30141`。
+- `dist/node_modules` 需包含运行所需生产依赖，删除仓库根 `node_modules` 后仍应可启动。
 
 ### 主题与 i18n
 
 - 主题支持 `~/.pi/agent/themes/` 和项目 `.pi/themes/`，按 `name-dark.json` / `name-light.json` 组成 theme set。
-- `app/layout.tsx` 在 hydration 前设置主题和语言，避免 Electron 中闪烁。不要把这段初始化简单移到 React effect。
+- `app/layout.tsx` 在 hydration 前设置主题和语言，避免首屏闪烁。不要把这段初始化简单移到 React effect。
 - i18n 仅支持 `en` 和 `zh-CN`；调用侧使用 `useI18n()`。
 - 修改消息目录时，保持英文/中文 key parity，并运行 `lib/i18n/*.test.mjs`。
 - 保留旧 localStorage key 到新 key 的幂等、自清理迁移，除非明确结束对应旧版本支持。
@@ -196,12 +191,11 @@ npm run release
 常见运行配置：
 
 - `PORT`：服务端口，默认 `30141`
-- `PI_WEB_HOSTNAME`：监听/允许的主机名，CLI 默认 `127.0.0.1`
+- `HOSTNAME` / `PI_WEB_HOSTNAME`：监听/允许的主机名，默认 `127.0.0.1`
 - `PI_WEB_ALLOWED_HOSTS`：额外允许的 Host，逗号分隔
 - `PI_WEB_PASSWORD`：Web/LAN Basic Auth 密码
 - `PI_CODING_AGENT_DIR`：pi agent 数据目录（由 SDK 使用）
 - `SKILLS_API_URL`：技能搜索 API 覆盖
-- `PI_WEB_RELEASE_TARGET`：发布脚本 Electron target
 - `GITHUB_TOKEN` / `GH_TOKEN`：发布或 GitHub 操作凭据
 
 不要提交 `.env*`、凭据、会话数据或本地参考仓库。
@@ -214,7 +208,7 @@ npm run release
 2. 逻辑或跨模块改动运行 `node --test`。
 3. TypeScript 改动运行 `./node_modules/.bin/tsc --noEmit`。
 4. React、Next.js 或通用代码改动运行 `npm run lint`。
-5. Electron 启动、网络安全或 readiness 改动，至少手动验证 Electron 启动、窗口加载和关闭/托盘行为。
+5. 打包改动验证 `npm run build` 后 `cd dist && node server.js`，并确认删除仓库根 `node_modules` 后仍可访问 `/api/home`。
 6. 主题或 i18n 改动验证 hydration 前状态、深浅色切换以及中英文 key parity。
 7. 文件访问、worktree、认证、项目信任等安全边界改动必须补充或更新回归测试。
 

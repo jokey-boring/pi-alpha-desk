@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
-const { skillHash } = require("../electron/bundled-skills.js");
+const { skillHash } = require("../lib/bundled-skills.js");
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const skillsRoot = path.join(projectRoot, "bundled-skills");

@@ -1,14 +1,6 @@
-// Generates macOS raster assets from the vector sources in public/.
-//
-// Electron's nativeImage only accepts PNG/JPEG (not SVG), so the Dock icon
-// and the macOS menu-bar (tray) icon are rendered here with sharp:
-//   - public/icon.svg        -> public/icon-mac.png  (1024x1024, app/Dock icon)
-//   - public/pi-original.svg -> electron/tray-icon-mac.png (32x32, black+alpha,
-//     used as a template image so macOS renders it for light/dark menu bars)
-//
-// Run manually with `npm run icons`; `electron:build` runs it automatically.
+// 从 public/ 中的 SVG 生成 macOS 用 PNG 图标。
+// 手动执行：npm run icons
 
-import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
@@ -25,20 +17,10 @@ async function renderSvg(svgPath, pngPath, size) {
 }
 
 async function main() {
-  await mkdir(path.join(root, "electron"), { recursive: true });
-
-  // Application / Dock icon (1024px — macOS convention for app icons).
   await renderSvg(
     path.join(root, "public", "icon.svg"),
     path.join(root, "public", "icon-mac.png"),
     1024,
-  );
-
-  // Menu-bar (tray) icon: 32x32 black+alpha template image.
-  await renderSvg(
-    path.join(root, "public", "pi-original.svg"),
-    path.join(root, "electron", "tray-icon-mac.png"),
-    32,
   );
 }
 
