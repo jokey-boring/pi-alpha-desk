@@ -246,7 +246,7 @@ export function AppTitleBar({
           top: topPanelPos.top,
           left: topPanelPos.left,
           width: topPanelPos.width,
-          maxHeight: `calc(100dvh - ${topPanelPos.top}px)`,
+          maxHeight: `calc(100vh - ${topPanelPos.top}px)`,
           overflowY: "auto",
           zIndex: 500,
         }}>

@@ -33,11 +33,12 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [
-          { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'" },
+          // 允许任意页面用 iframe 嵌入，不限制域名。不用 X-Frame-Options：
+          // 该头没有“允许所有来源”的标准值，会盖过 CSP 的 frame-ancestors *。
+          { key: "Content-Security-Policy", value: "frame-ancestors *; base-uri 'self'; object-src 'none'" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
           { key: "Referrer-Policy", value: "no-referrer" },
           { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "DENY" },
         ],
       },
       {
@@ -46,28 +47,32 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "private, no-cache, max-age=0, must-revalidate" },
         ],
       },
-      {
-        // 文件预览（PDF/Word/Excel）通过同源 iframe 内嵌展示；全局 CSP 的
-        // frame-ancestors 'none' / X-Frame-Options DENY 会阻止预览，此处对
-        // /api/files 放宽为仅允许同源嵌入（frame-ancestors 'self'）。
-        source: "/api/files/:path*",
-        headers: [
-          { key: "Content-Security-Policy", value: "frame-ancestors 'self'; base-uri 'self'; object-src 'none'" },
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
-        ],
-      },
     ];
   },
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
     NEXT_PUBLIC_PI_VERSION: piVersion,
   },
-  webpack(config, { isServer }) {
+  productionBrowserSourceMaps: false,
+  enablePrerenderSourceMaps: false,
+  experimental: {
+    // 自定义 webpack() 会关闭默认 worker；显式打开，避免编译挤在主进程里把 4GB 堆打满。
+    webpackBuildWorker: true,
+    webpackMemoryOptimizations: true,
+    serverSourceMaps: false,
+    cpus: 1,
+  },
+  webpack(config, { isServer, dev }) {
     if (isServer) {
       // Instrumentation imports Undici before route compilation. Keep it as a
       // Node runtime dependency so Webpack does not traverse Undici's
       // `node:console` mock helpers and fail otherwise-valid API routes.
       config.externals.push("undici");
+    }
+    if (dev === false) {
+      // 生产构建串行编译并关掉 webpack 缓存，降低 16GB 机器上的峰值内存。
+      config.parallelism = 1;
+      config.cache = false;
     }
     return config;
   },

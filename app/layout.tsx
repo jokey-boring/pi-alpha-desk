@@ -30,7 +30,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body translate="no" className="notranslate" style={{ height: "100dvh", display: "flex", flexDirection: "column" }}>
+      <body translate="no" className="notranslate" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
         {children}
       </body>
     </html>

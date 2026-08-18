@@ -708,7 +708,7 @@ export function AppShell() {
         }
       }
     `}</style>
-    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", overflow: "hidden", background: "var(--bg)" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: "var(--bg)" }}>
       <AppTitleBar
         topBarRef={topBarRef}
         sidebarOpen={sidebarOpen}

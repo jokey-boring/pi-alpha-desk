@@ -65,8 +65,8 @@ export function SettingsModal({
         style={{
           width: isMobile ? "calc(100vw - 16px)" : 1000,
           maxWidth: "calc(100vw - 16px)",
-          height: isMobile ? "calc(100dvh - 16px)" : "80vh",
-          maxHeight: "calc(100dvh - 16px)",
+          height: isMobile ? "calc(100vh - 16px)" : "80vh",
+          maxHeight: "calc(100vh - 16px)",
           background: "var(--bg)",
           border: "1px solid var(--border)",
           borderRadius: 10,

@@ -196,7 +196,7 @@ html, body {
 }
 
 body {
-  height: 100dvh;
+  height: 100vh;
 }
 
 /* Frameless app title bar (Electron) — empty space is a drag handle,
