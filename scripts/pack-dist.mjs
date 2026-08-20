@@ -5,10 +5,12 @@
  * 策略：
  *   1. 复制完整生产 .next（排除 cache / standalone / dev）
  *   2. 复制 public、bundled-plugins、bundled-skills
- *   3. 复制生产依赖到 dist/node_modules
+ *   3. 默认复制生产依赖到 dist/node_modules；可用 --omit-node-modules 省略（启动时 npm install）
  *   4. 写入 server.js（Next.js custom server，默认 127.0.0.1:30141）
+ *   5. 内置当前平台 Node 22，并写入 start.cmd / start.sh / npm-registry.txt
  *
  * 用法：在 `next build` 之后执行 `node scripts/pack-dist.mjs`
+ *       node scripts/pack-dist.mjs --omit-node-modules
  */
 "use strict";
 
@@ -25,6 +27,11 @@ import {
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  BUNDLED_NODE_VERSION,
+  ensureBundledNode,
+  writeStartScripts,
+} from "./bundled-node.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
@@ -265,7 +272,14 @@ main().catch((error) => {
   );
 }
 
-function main() {
+/** 写入 dist/start.cmd 与 start.sh：优先内置 Node，否则回退系统 node */
+function writeStartCmd() {
+  writeStartScripts(DIST, { layout: "dist", port: "9000", host: "localhost" });
+  log(`写入 start.cmd / start.sh（优先内置 Node ${BUNDLED_NODE_VERSION}）`);
+}
+
+async function main() {
+  const omitNodeModules = process.argv.includes("--omit-node-modules");
   const packageJson = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
   const buildIdPath = join(NEXT, "BUILD_ID");
   if (!existsSync(buildIdPath) || !readFileSync(buildIdPath, "utf8").trim()) {
@@ -298,10 +312,24 @@ function main() {
   // 不用 fs.cpSync：Windows + 非 ASCII 路径下会 unlink 失败/进程异常
   copyFileSync(join(ROOT, "lib", "bundled-skills.js"), join(DIST, "lib", "bundled-skills.js"));
 
-  log("复制生产依赖到 dist/node_modules …");
-  copyProductionNodeModules(packageJson);
+  const lockPath = join(ROOT, "package-lock.json");
+  if (existsSync(lockPath)) {
+    copyFileSync(lockPath, join(DIST, "package-lock.json"));
+    log("复制 package-lock.json");
+  }
+
+  if (omitNodeModules) {
+    log("跳过 node_modules（--omit-node-modules；首次启动将 npm install）");
+  } else {
+    log("复制生产依赖到 dist/node_modules …");
+    copyProductionNodeModules(packageJson);
+  }
 
   writeServerJs();
+
+  log(`安装内置 Node ${BUNDLED_NODE_VERSION} …`);
+  await ensureBundledNode(DIST, { log });
+  writeStartCmd();
 
   writeFileSync(
     join(DIST, "package.json"),
@@ -314,6 +342,7 @@ function main() {
         engines: packageJson.engines,
         scripts: { start: "node server.js" },
         dependencies: packageJson.dependencies,
+        ...(packageJson.overrides ? { overrides: packageJson.overrides } : {}),
       },
       null,
       2,
@@ -322,7 +351,12 @@ function main() {
   );
 
   log(`完成：${DIST}`);
-  log("启动：cd dist && node server.js");
+  log("启动：双击 start.cmd（Windows）或 ./start.sh（macOS/Linux）");
+  if (omitNodeModules) {
+    log("npm 源：编辑 dist/npm-registry.txt，或设 PI_NPM_REGISTRY / 写 .npmrc");
+  }
 }
 
-main();
+main().catch((error) => {
+  fail(error instanceof Error ? error.message : String(error));
+});

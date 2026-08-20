@@ -31,6 +31,9 @@ nul
 /release
 /dist
 
+# local pack caches (Node zip / SFX staging)
+/.cache/
+
 # tauri (remnants from previous Tauri migration, kept to prevent re-inclusion)
 src-tauri/
 tauri-dist/
