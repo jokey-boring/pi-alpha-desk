@@ -27,6 +27,7 @@ import {
   SIDEBAR_MIN_WIDTH,
 } from "@/lib/panel-layout";
 import { copyText } from "@/lib/clipboard";
+import { appRootHeightStyle, overlayCoverStyle } from "@/lib/css-compat";
 import { getFileName } from "@/lib/file-paths";
 import { buildAtMentionText, buildFileAtMentionsText } from "@/lib/file-fuzzy";
 import { clearDraft, getDraft } from "@/lib/draft-store";
@@ -708,7 +709,7 @@ export function AppShell() {
         }
       }
     `}</style>
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: "var(--bg)" }}>
+    <div style={{ display: "flex", flexDirection: "column", ...appRootHeightStyle, overflow: "hidden", background: "var(--bg)" }}>
       <AppTitleBar
         topBarRef={topBarRef}
         sidebarOpen={sidebarOpen}
@@ -769,6 +770,7 @@ export function AppShell() {
           display: "flex",
           overflow: "hidden",
           minWidth: 0,
+          minHeight: 0,
           position: "relative",
         } as React.CSSProperties}
       >
@@ -777,8 +779,7 @@ export function AppShell() {
         className={`sidebar-overlay-backdrop${mobileSidebarReady ? "" : " sidebar-mobile-pending"}`}
         onClick={() => setSidebarOpen(false)}
         style={{
-          position: "fixed",
-          inset: 0,
+          ...overlayCoverStyle,
           zIndex: 199,
           background: "rgba(0,0,0,0.4)",
           opacity: sidebarOpen ? 1 : 0,
@@ -810,10 +811,10 @@ export function AppShell() {
         />
       )}
 
-      {/* Center: chat */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+      {/* Center: chat — minHeight:0 + 明确高度，避免旧 Electron 中 flex-1 高度塌缩导致空态无法垂直居中 */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0, minHeight: 0 }}>
         {/* Chat content */}
-        <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
+        <div style={{ flex: 1, minHeight: 0, height: "100%", overflow: "hidden", position: "relative" }}>
           {showChat ? (
             <ChatWindow
               key={sessionKey}

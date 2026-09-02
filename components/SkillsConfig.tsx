@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { PlusIcon } from "@phosphor-icons/react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useI18n } from "@/hooks/useI18n";
+import { modalFullScreenSize, overlayCoverStyle } from "@/lib/css-compat";
 import type {
   SkillInfo as Skill,
   SkillInstallScope,
@@ -888,13 +889,13 @@ export function SkillsConfig({
     <div
       style={embedded
         ? { display: "flex", flex: 1, minWidth: 0, minHeight: 0, overflow: "hidden" }
-        : { position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}
+        : { ...overlayCoverStyle, zIndex: 1000, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}
       onClick={(e) => { if (!embedded && e.target === e.currentTarget) onCloseAction?.(); }}
     >
       <div
         style={embedded
           ? { display: "flex", flex: 1, minWidth: 0, minHeight: 0, flexDirection: "column", overflow: "hidden" }
-          : { width: isMobile ? "calc(100vw - 16px)" : 860, maxWidth: "calc(100vw - 16px)", height: isMobile ? "calc(100vh - 16px)" : "78vh", maxHeight: "calc(100vh - 16px)", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 10, display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", overflow: "hidden" }
+          : { ...modalFullScreenSize(isMobile, 16), background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 10, display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", overflow: "hidden" }
         }
       >
         {!embedded && (

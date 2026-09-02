@@ -164,8 +164,54 @@ if (isNodeTooOld()) {
 }
 
 const next = require("next");
+const util = require("util");
 
 process.chdir(__dirname);
+
+/** 生产环境把 console / 未捕获异常写入 server-log.txt，便于后台启动排障 */
+function setupFileLogging() {
+  const logPath = path.join(__dirname, "server-log.txt");
+  const stream = fs.createWriteStream(logPath, { flags: "a" });
+  const formatArgs = (args) =>
+    args
+      .map((arg) => {
+        if (typeof arg === "string") return arg;
+        if (arg instanceof Error) return arg.stack || arg.message;
+        try {
+          return util.inspect(arg, { depth: 4, breakLength: 120 });
+        } catch {
+          return String(arg);
+        }
+      })
+      .join(" ");
+  const write = (level, args) => {
+    try {
+      stream.write(\`[\${new Date().toISOString()}] [\${level}] \${formatArgs(args)}\\n\`);
+    } catch {
+      // 日志写失败不阻断服务
+    }
+  };
+  const wrap =
+    (level, original) =>
+    (...args) => {
+      original.apply(console, args);
+      write(level, args);
+    };
+  console.log = wrap("INFO", console.log.bind(console));
+  console.info = wrap("INFO", console.info.bind(console));
+  console.warn = wrap("WARN", console.warn.bind(console));
+  console.error = wrap("ERROR", console.error.bind(console));
+  process.on("uncaughtException", (error) => {
+    console.error("[pi-web] uncaughtException:", error);
+  });
+  process.on("unhandledRejection", (reason) => {
+    console.error("[pi-web] unhandledRejection:", reason);
+  });
+  console.log(\`[pi-web] file logging -> \${logPath}\`);
+  return logPath;
+}
+
+setupFileLogging();
 
 /** 手写解析，避免依赖 util.parseArgs（旧 Node 无此 API） */
 function readArgValue(argv, index, flag) {
@@ -250,15 +296,24 @@ async function main() {
   await app.prepare();
 
   createServer(async (req, res) => {
+    const startedAt = Date.now();
+    const method = req.method || "GET";
+    const url = req.url || "/";
+    res.on("finish", () => {
+      console.log(
+        \`[http] \${method} \${url} -> \${res.statusCode} (\${Date.now() - startedAt}ms)\`,
+      );
+    });
     try {
-      await handle(req, res, parse(req.url, true));
+      await handle(req, res, parse(url, true));
     } catch (error) {
-      console.error("Error occurred handling", req.url, error);
+      console.error("Error occurred handling", url, error);
       res.statusCode = 500;
       res.end("internal server error");
     }
   }).listen(port, hostname, () => {
     console.log(\`> Ready on http://\${hostname}:\${port}\`);
+    console.log(\`> Logs: \${path.join(__dirname, "server-log.txt")}\`);
     void installBundledSkillsIfPresent();
   });
 }

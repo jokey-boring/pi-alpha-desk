@@ -468,9 +468,22 @@ export function ChatWindow({ session, newSessionCwd, newSessionDraftId, onAgentE
   const belowEditorWidgets = extensionWidgets.filter((widget) => widget.placement === "belowEditor");
   const activePhaseLabel = isCompacting ? t("desktop.compacting") : phaseLabel(agentPhase, t);
 
+  // 旧 Electron / WebView：百分比高度链易断，根节点用绝对填满 + minHeight:0 保底
+  const fillParentStyle = {
+    position: "absolute" as const,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    minHeight: 0,
+    boxSizing: "border-box" as const,
+  };
+
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center text-text-muted">
+      <div className="flex items-center justify-center text-text-muted" style={fillParentStyle}>
         {t("desktop.loadingSession")}
       </div>
     );
@@ -478,7 +491,7 @@ export function ChatWindow({ session, newSessionCwd, newSessionDraftId, onAgentE
 
   if (error) {
     return (
-      <div className="flex h-full items-center justify-center text-red-400">
+      <div className="flex items-center justify-center text-red-400" style={fillParentStyle}>
         {error}
       </div>
     );
@@ -486,7 +499,8 @@ export function ChatWindow({ session, newSessionCwd, newSessionDraftId, onAgentE
 
   return (
     <div
-      className="relative flex h-full min-w-0 flex-col overflow-hidden"
+      className="relative flex min-w-0 flex-col overflow-hidden"
+      style={fillParentStyle}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -525,7 +539,20 @@ export function ChatWindow({ session, newSessionCwd, newSessionDraftId, onAgentE
       )}
 
       {isEmptyNew ? (
-        <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto">
+        // 绝对填满父级再 flex 居中：不依赖 flex-1 在旧 Chromium 里分到确定高度
+        <div
+          className="flex flex-col items-center justify-center overflow-y-auto"
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            width: "100%",
+            minHeight: 0,
+            boxSizing: "border-box",
+          }}
+        >
           <div className="w-full max-w-[820px]">
             {/* Pi Logo */}
             <div
@@ -1149,7 +1176,10 @@ function ExtensionDialog({
     <div
       style={{
         position: "absolute",
-        inset: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
         zIndex: 90,
         display: "flex",
         alignItems: "center",
@@ -1362,7 +1392,10 @@ function ExtensionCustomPanel({
     <div
       style={{
         position: "absolute",
-        inset: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
         zIndex: 95,
         display: "flex",
         alignItems: "center",

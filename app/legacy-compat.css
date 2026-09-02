@@ -1,0 +1,144 @@
+/*
+ * 低版本浏览器 CSS 回退（Chrome 70–90、旧 WebView 等）
+ *
+ * 约定：
+ * - 视口单位只用 vh/vw，不用 dvh/dvw/svh/lvh
+ * - 布局优先 flex + height:100%，根节点不依赖 100dvh
+ * - color-mix / min() / clamp() 在此提供 @supports not 回退
+ */
+
+/* ── color-mix 回退 ── */
+@supports not (color: color-mix(in srgb, red, blue)) {
+  :root {
+    --minimap-preview-user-bg: var(--bg-hover);
+    --minimap-preview-tool-bg: var(--bg-hover);
+    --minimap-preview-error-bg: var(--bg-hover);
+    --minimap-preview-default-bg: var(--bg-hover);
+  }
+
+  html.dark {
+    --minimap-preview-user-bg: var(--bg-hover);
+    --minimap-preview-tool-bg: var(--bg-hover);
+    --minimap-preview-error-bg: var(--bg-hover);
+    --minimap-preview-default-bg: var(--bg-hover);
+  }
+
+  .git-changes-indicator-part + .git-changes-indicator-part {
+    border-left-color: var(--border);
+  }
+
+  .mention-token {
+    text-decoration-color: var(--accent);
+  }
+
+  .chat-assistant-error {
+    border-color: var(--accent-red);
+    background: var(--git-status-deleted-bg);
+  }
+
+  .tool-call-block {
+    border-color: var(--border);
+    background: var(--bg-card);
+  }
+
+  .tool-call-block.is-error {
+    border-color: var(--accent-red);
+    background: var(--git-status-deleted-bg);
+  }
+
+  .chat-input-model-option.is-selected,
+  .chat-input-model-option.is-selected:hover {
+    background: var(--bg-selected) !important;
+  }
+
+  .chat-input-model-option.is-active:not(.is-selected),
+  .chat-input-model-option.is-active:not(.is-selected):hover {
+    background: var(--bg-hover) !important;
+  }
+
+  .chat-input-slash-item.is-active,
+  .chat-input-slash-item.is-active:hover {
+    background: var(--bg-hover);
+  }
+
+  .chat-input-slash-item.is-selected,
+  .chat-input-slash-item.is-selected:hover {
+    background: var(--bg-selected);
+  }
+
+  .chat-input-mention-item.is-active,
+  .chat-input-mention-item.is-active:hover {
+    background: var(--bg-hover);
+  }
+
+  .chat-input-mention-item.is-selected,
+  .chat-input-mention-item.is-selected:hover {
+    background: var(--bg-selected);
+  }
+
+  .markdown-body a {
+    color: var(--accent);
+    text-decoration-color: var(--accent);
+  }
+
+  .markdown-body a:hover {
+    border-color: var(--accent);
+    background: var(--bg-hover);
+  }
+
+  .markdown-body .file-link-chip {
+    border-color: var(--border);
+    background: var(--bg-hover);
+  }
+
+  .process-group-hatch {
+    background: repeating-linear-gradient(
+      90deg,
+      var(--border) 0 6px,
+      transparent 6px 10px
+    );
+  }
+
+  @media (min-width: 641px) and (max-width: 959px) {
+    .right-panel-container.right-panel-open {
+      box-shadow: -8px 0 20px rgba(0, 0, 0, 0.12);
+    }
+  }
+}
+
+/* ── min() / clamp() 回退 ── */
+@supports not (width: min(1px, 2px)) {
+  .chat-user-bubble-wrap {
+    max-width: 85%;
+  }
+
+  @media (min-width: 641px) {
+    .right-panel-container.right-panel-open,
+    .right-panel-container.right-panel-open > * {
+      width: 42vw;
+      min-width: 360px;
+      max-width: 640px;
+    }
+  }
+
+  @media (min-width: 641px) and (max-width: 959px) {
+    .right-panel-container.right-panel-open {
+      width: calc(100% - 48px);
+      max-width: 640px;
+    }
+
+    .right-panel-splitter {
+      right: calc(100% - 48px);
+      max-width: 640px;
+    }
+  }
+}
+
+/* 根布局：html/body 已有 height:100%，避免单独依赖 100vh */
+.app-layout-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+}

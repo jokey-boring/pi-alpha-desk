@@ -2,6 +2,7 @@
 
 import { ShieldCheck } from "@phosphor-icons/react";
 import { useI18n } from "@/hooks/useI18n";
+import { overlayCoverStyle } from "@/lib/css-compat";
 
 export function ProjectTrustDialog({
   cwd,
@@ -22,8 +23,7 @@ export function ProjectTrustDialog({
     <div
       role="presentation"
       style={{
-        position: "fixed",
-        inset: 0,
+        ...overlayCoverStyle,
         zIndex: 1100,
         display: "flex",
         alignItems: "center",

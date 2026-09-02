@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { colorMix } from "@/lib/css-compat";
 
 const TOGGLE_WIDTH = 40;
 const TOGGLE_HEIGHT = 22;
@@ -42,7 +43,9 @@ export function SettingToggle({
   label: string;
   description?: string;
 }) {
-  const trackBg = checked ? "var(--accent)" : "color-mix(in srgb, var(--border) 70%, var(--bg))";
+  const trackBg = checked
+    ? "var(--accent)"
+    : colorMix("color-mix(in srgb, var(--border) 70%, var(--bg))", "var(--border)");
   const thumbLeft = checked ? TOGGLE_WIDTH - THUMB_SIZE - THUMB_OFFSET : THUMB_OFFSET;
 
   return (

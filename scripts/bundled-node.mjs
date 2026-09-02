@@ -250,6 +250,7 @@ if errorlevel 1 (
 )
 set /p SERVER_PID=<".server.pid"
 echo started pid=!SERVER_PID! url=http://${host}:${port}
+echo log=%CD%\\server-log.txt
 exit /b 0
 `;
 }
@@ -383,11 +384,12 @@ if [[ -f .server.pid ]]; then
 fi
 
 echo "[pi-alpha-desk] starting http://${host}:${port} (background)"
-nohup "$NODE_BIN" server.js --port ${port} --host ${host} >.server.log 2>&1 &
+# stdout/stderr 仍落到 server-console.txt；server.js 自身还会写 server-log.txt
+nohup "$NODE_BIN" server.js --port ${port} --host ${host} >>server-console.txt 2>&1 &
 echo $! > .server.pid
 echo "[pi-alpha-desk] started pid=$(tr -d '[:space:]' < .server.pid)"
 echo "[pi-alpha-desk] url: http://${host}:${port}"
-echo "[pi-alpha-desk] log: $APP_DIR/.server.log"
+echo "[pi-alpha-desk] log: $APP_DIR/server-log.txt"
 echo "[pi-alpha-desk] stop: ./stop.sh"
 `;
 }

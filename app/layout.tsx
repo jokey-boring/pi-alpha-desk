@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "katex/dist/katex.min.css";
 import "./globals.css";
+import "./legacy-compat.css";
 import "@fontsource/ia-writer-quattro";
 import "@fontsource/ia-writer-quattro/400-italic.css";
 import "@fontsource/ia-writer-quattro/700.css";
@@ -30,7 +31,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body translate="no" className="notranslate" style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      <body translate="no" className="notranslate app-layout-root">
         {children}
       </body>
     </html>

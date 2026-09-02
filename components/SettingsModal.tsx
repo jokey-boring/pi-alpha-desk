@@ -9,6 +9,7 @@ import { PluginsConfig } from "./PluginsConfig";
 import { SkillsConfig } from "./SkillsConfig";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useI18n } from "@/hooks/useI18n";
+import { modalFullScreenSize, overlayCoverStyle } from "@/lib/css-compat";
 
 export type SettingsTab = "display" | "chat" | "models" | "skills" | "plugins";
 
@@ -43,11 +44,12 @@ export function SettingsModal({
     initialTab === "skills" || initialTab === "plugins" ? (cwd ? initialTab : "display") : initialTab,
   );
 
+  const modalSize = modalFullScreenSize(isMobile, 16);
+
   return (
     <div
       style={{
-        position: "fixed",
-        inset: 0,
+        ...overlayCoverStyle,
         zIndex: 1000,
         background: "rgba(0,0,0,0.35)",
         display: "flex",
@@ -63,10 +65,10 @@ export function SettingsModal({
         aria-modal="true"
         aria-label={t("desktop.settings")}
         style={{
-          width: isMobile ? "calc(100vw - 16px)" : 1000,
-          maxWidth: "calc(100vw - 16px)",
-          height: isMobile ? "calc(100vh - 16px)" : "80vh",
-          maxHeight: "calc(100vh - 16px)",
+          width: isMobile ? modalSize.width : 1000,
+          maxWidth: modalSize.maxWidth,
+          height: isMobile ? modalSize.height : "80vh",
+          maxHeight: modalSize.maxHeight,
           background: "var(--bg)",
           border: "1px solid var(--border)",
           borderRadius: 10,

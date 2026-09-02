@@ -68,6 +68,14 @@ const nextConfig: NextConfig = {
       // Node runtime dependency so Webpack does not traverse Undici's
       // `node:console` mock helpers and fail otherwise-valid API routes.
       config.externals.push("undici");
+      // 服务端保留 Node 内置模块为 runtime require，避免 webpack 在 instrumentation 链里误打包
+      config.externals.push(({ request }: { request?: string }, callback: (error?: Error | null, result?: string) => void) => {
+        if (request?.startsWith("node:")) {
+          callback(null, `commonjs ${request.slice(5)}`);
+          return;
+        }
+        callback();
+      });
     }
     if (dev === false) {
       // 生产构建串行编译并关掉 webpack 缓存，降低 16GB 机器上的峰值内存。

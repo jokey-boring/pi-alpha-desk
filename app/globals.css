@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+/* 视口与布局：只用 vh/vw + height:100%，勿用 dvh/dvw/svh/lvh（旧 WebView 不支持） */
+
 @theme {
   --color-bg: var(--bg);
   --color-bg-panel: var(--bg-panel);
@@ -196,7 +198,8 @@ html, body {
 }
 
 body {
-  height: 100vh;
+  height: 100%;
+  min-height: 100%;
 }
 
 /* Frameless app title bar (Electron) — empty space is a drag handle,
@@ -507,7 +510,10 @@ pre, code {
 }
 .chat-input-streaming-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 0;
   border-radius: 7px;
   opacity: 0.3;
@@ -1291,7 +1297,10 @@ span.linenumber {
 /* Popover cover (click-outside catcher) + base popover box. */
 .session-info-bar-popover-cover {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 499;
 }
 .session-info-bar-popover {

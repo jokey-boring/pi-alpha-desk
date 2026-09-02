@@ -210,6 +210,27 @@ function applyBorderDepth(depth: number) {
     return;
   }
 
+  const supportsMix =
+    typeof CSS !== "undefined" &&
+    CSS.supports("color", "color-mix(in srgb, red, blue)");
+
+  if (!supportsMix) {
+    // 低版本浏览器：无法在运行时 color-mix，深度 0 贴近背景、100 贴近文字
+    const orig = el.style.getPropertyValue("--border-orig").trim();
+    const hoverOrig = el.style.getPropertyValue("--border-hover-orig").trim();
+    if (depth <= 12) {
+      el.style.setProperty("--border", "transparent");
+      el.style.setProperty("--border-hover", "transparent");
+    } else if (depth >= 88) {
+      el.style.setProperty("--border", "var(--text)");
+      el.style.setProperty("--border-hover", "var(--text)");
+    } else if (orig) {
+      el.style.setProperty("--border", orig);
+      el.style.setProperty("--border-hover", hoverOrig || orig);
+    }
+    return;
+  }
+
   const n = depth / 100;
 
   const expr = (origProp: string) => {
